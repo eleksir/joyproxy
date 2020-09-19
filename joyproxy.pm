@@ -52,7 +52,6 @@ sub joyproxy ($) {
 sub joyurl (@) {
 	my $str = shift;
 	my $host = shift;
-	my $prefix = shift;
 	$str = uri_unescape($str);
 
 	if (length($str) < 60) {
@@ -73,9 +72,8 @@ sub joyurl (@) {
 			$fname = substr($url[4], 0, -5) if (substr($url[4], -5, 6) eq '.webm');
 
 			$str = sprintf(
-				"https://%s/%s/joyproxy/%s/%s/%s/mp4/%s.mp4",
+				"https://%s/joyproxy/%s/%s/%s/mp4/%s.mp4",
 				$host,
-				$prefix,
 				$url[0],
 				$url[1],
 				$url[2],
@@ -90,7 +88,7 @@ sub joyurl (@) {
 		$str = '';
 	}
 
-	my $msg = "<html>\n<body>\n<form method='get' action='$prefix/joyurl'>\n<input type='text' name='joyurl' size=100 autofocus><br />\n<input type='submit' value='Post it!'' style='font-size:115%;'' />\n<br>$str\n</body>\n</html>\n";
+	my $msg = "<html>\n<body>\n<form method='get' action='joyurl'>\n<input type='text' name='joyurl' size=100 autofocus><br />\n<input type='submit' value='Post it!'' style='font-size:115%;'' />\n<br>$str\n</body>\n</html>\n";
 
 	return ('200', 'text/html', $msg);
 }

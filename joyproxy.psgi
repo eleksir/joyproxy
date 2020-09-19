@@ -9,8 +9,6 @@ use joyproxy qw(joyurl joyproxy);
 
 $| = 1;
 
-my $prefix = "api";
-
 my $app = sub {
 	my $env = shift;
 
@@ -18,7 +16,7 @@ my $app = sub {
 	my $status = '404';
 	my $content = 'text/plain';
 
-	if ($env->{PATH_INFO} =~ /$prefix\/joyproxy\/(.+)/) {
+	if ($env->{PATH_INFO} =~ /^\/joyproxy\/(.+)/) {
 		my $joyproxyurl = $1;
 		($status, $content, $msg) = ('400', $content, "Bad Request?\n");
 
@@ -27,11 +25,11 @@ my $app = sub {
 		}
 	}
 
-	if ($env->{PATH_INFO} =~ /$prefix\/joyurl/) {
+	if ($env->{PATH_INFO} =~ /^\/joyurl/) {
 		if (defined($env->{QUERY_STRING})) {
-			($status, $content, $msg) = joyurl($env->{QUERY_STRING}, $env->{HTTP_HOST}, $prefix);
+			($status, $content, $msg) = joyurl($env->{QUERY_STRING}, $env->{HTTP_HOST});
 		} else {
-			($status, $content, $msg) = joyurl('', $env->{HTTP_HOST}, $prefix);
+			($status, $content, $msg) = joyurl('', $env->{HTTP_HOST});
 		}
 	}
 
