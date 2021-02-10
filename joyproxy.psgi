@@ -1,13 +1,12 @@
 use 5.018;
 use strict;
-use warnings "all";
+use warnings;
 use utf8;
-use open qw(:std :utf8);
+use open qw (:std :utf8);
+use version; our $VERSION = qw (1.1.0);
 
-use lib qw(. ./vendor_perl/lib/perl5);
-use joyproxy qw(joyurl joyproxy);
-
-$| = 1;
+use lib qw (. ./vendor_perl/lib/perl5);
+use joyproxy qw (joyurl joyproxy);
 
 my $app = sub {
 	my $env = shift;
@@ -16,25 +15,23 @@ my $app = sub {
 	my $status = '404';
 	my $content = 'text/plain';
 
-	if ($env->{PATH_INFO} =~ /^\/joyproxy\/(.+)/) {
+	if ($env->{PATH_INFO} =~ /^\/joyproxy\/(.+)/xmsg) {
 		my $joyproxyurl = $1;
-		($status, $content, $msg) = ('400', $content, "Bad Request?\n");
+		($status, $msg) = ('400', "Bad Request?\n");
 
-		if (($joyproxyurl =~ /\.mp4/i) or ($joyproxyurl =~ /\.webm/i)) {
-			($status, $content, $msg) = joyproxy($joyproxyurl);
+		if (($joyproxyurl =~ /\.mp4$/xmsgi) or ($joyproxyurl =~ /\.webm$/xmsgi)) {
+			($status, $content, $msg) = joyproxy $joyproxyurl ;
 		}
 	}
 
-	if ($env->{PATH_INFO} =~ /^\/joyurl/) {
-		if (defined($env->{QUERY_STRING})) {
-			($status, $content, $msg) = joyurl($env->{QUERY_STRING}, $env->{HTTP_HOST});
-		} else {
-			($status, $content, $msg) = joyurl('', $env->{HTTP_HOST});
-		}
+	if ($env->{PATH_INFO} =~ /^\/joyurl/xmsg) {
+		my $querystring = $env->{QUERY_STRING} // '';
+
+		($status, $content, $msg) = joyurl ($querystring, $env->{HTTP_HOST});
 	}
 
 	use bytes;
-	my $length = length($msg);
+	my $length = length $msg;
 	no bytes;
 
 	return [
