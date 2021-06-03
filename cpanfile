@@ -1,3 +1,4 @@
-require HTTP::Tiny;
-require URI::URL;
-require URI::Escape;
+requires 'HTTP::Tiny';
+requires 'URI::URL';
+requires 'URI::Escape';
+requires 'Plack::Util';

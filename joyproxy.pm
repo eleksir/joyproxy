@@ -36,11 +36,11 @@ sub joyproxy ($) {
 
 			if (defined $readlen) {
 				if ($readlen != $filesize) {
-					warn "Unable to read $file readlen does not match filesize: $readlen vs $filesize";
+					carp "Unable to read $file readlen does not match filesize: $readlen vs $filesize";
 					return ('500', 'text/plain', "Unable to read file in temporary location\n");
 				}
 			} else {
-				warn "Unable to read $file: $!";
+				carp "Unable to read $file: $!";
 				return ('500', 'text/plain', "Unable to read file in temporary location: $!\n");
 			}
 
@@ -130,7 +130,7 @@ sub __dlfunc($) {
 	my $url = shift;
 
 	unless (-d '/tmp/joyproxy') {
-		warn 'no /tmp/joyproxy';
+		carp 'no /tmp/joyproxy';
 
 		unless (mkdir '/tmp/joyproxy') {
 			return (undef, undef);
@@ -138,7 +138,7 @@ sub __dlfunc($) {
 	}
 
 	my @explodedurl = split /\//msx, $url;
-	my $file = $explodedurl[$#explodedurl];
+	my $file = $explodedurl[$#explodedurl]; ## no critic (Variables::RequireNegativeIndices)
 	$#explodedurl = -1; undef @explodedurl;
 	$file = '/tmp/joyproxy/' . $file;
 	$url = __urlencode ($url);
