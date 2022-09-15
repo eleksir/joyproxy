@@ -6,13 +6,14 @@ use warnings;
 use utf8;
 use open qw (:std :utf8);
 
+use Carp qw (carp);
 use Fcntl;
 use HTTP::Tiny;
 use URI::URL;
 use URI::Escape qw (uri_unescape);
 
 use Exporter qw (import);
-use version; our $VERSION = qw (1.1.0);
+use version; our $VERSION = qw (1.1.1);
 our @EXPORT_OK = qw (joyproxy joyurl);
 
 sub joyproxy ($) {
@@ -64,7 +65,7 @@ sub joyproxy ($) {
 }
 
 sub joyurl (@) {
-	my $str = shift;
+	my $str  = shift;
 	my $host = shift;
 
 	# TODO: handle error here
@@ -72,22 +73,21 @@ sub joyurl (@) {
 
 	if (length ($str) < 60) {
 		$str = '';
-	} else {
-		$str = substr $str, 14;
 	}
 
-	if ($str =~ /^img\d+\.reactor\.cc/xmsg) {
+	if ($str =~ /^joyurl=https?\:\/\/(img\d+\.reactor\.cc.+)/xmsg) {
+		my $string = $1;
 		# img1.reactor.cc/pics/post/webm/видосик.webm
-		my @url = split /\//msx, $str;
+		my @url = split /\//msx, $string;
 
 		if (($url[3] eq 'webm' || $url[3] eq 'mp4') &&
-		    ($url[4] =~ /\.webm$/xmsg || $url[4] =~ /\.mp4$/xmsg)) {
+			($url[4] =~ /\.webm$/xmsg || $url[4] =~ /\.mp4$/xmsg)) {
 			# we prefer mp4, right?, so
 			my $fname;
 			$fname = substr ($url[4], 0, -5) if (substr ($url[4], -5, 6) eq '.webm');
 			$fname = substr ($url[4], 0, -4) if (substr ($url[4], -4, 4) eq '.mp4');
 
-			$str = sprintf (
+			$string = sprintf (
 				'https://%s/joyproxy/%s/%s/%s/mp4/%s.mp4',
 				$host,
 				$url[0],
@@ -96,7 +96,7 @@ sub joyurl (@) {
 				$fname
 			);
 
-			$str = __urlencode ($str);
+			$str = __urlencode ($string);
 		} else {
 			$str = '';
 		}
