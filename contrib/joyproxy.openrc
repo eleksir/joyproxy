@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+name="$SVCNAME"
+command="/var/lib/$SVCNAME/$SVCNAME"
+supervisor="supervise-daemon"
+pidfile="/run/$SVCNAME/$SVCNAME.pid"
+command_user=nobody:nogroup
+
+depend() {
+        need net
+        use dns
+}
+
+start_pre() {
+        mkdir -p /run/$SVCNAME
+        chown -R nobody:nogroup /run/$SVCNAME
+}
