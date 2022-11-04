@@ -1,7 +1,7 @@
 #!/usr/bin/env gmake -f
 
 GOOPTS=CGO_ENABLED=0
-BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l
+BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath
 
 all: clean build
 
@@ -11,14 +11,9 @@ build:
 clean:
 	go clean
 
-wipe:
-	go clean
-	rm -rf go.{mod,sum}
+upgrade:
 	rm -rf vendor
-
-prep:
-	go mod init joyproxy
-	go mod tidy
+	go get -d -u -t ./...
 	go mod vendor
 
 # vim: set ft=make noet ai ts=4 sw=4 sts=4:
