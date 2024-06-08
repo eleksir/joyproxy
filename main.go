@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ type config struct {
 
 var cfg config
 
-// Pretend, we're... isp nat or proxy6 so we have different user agent
+// Pretend, we're… isp nat or proxy6 so we have different user agent.
 var userAgentString = []string{
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.81 Safari/537.36 OPR/83.0.4254.27",
 	"Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.81 Safari/537.36",
@@ -95,10 +96,7 @@ func loadConf() {
 		os.Exit(1)
 	}
 
-	// golang 1.19 just fucking prick disallowing 2 conditions in one if, what the fuck?
-	condition1 := cfg.proto != "http"
-	condition2 := cfg.proto != "https"
-	if condition1 && condition2 {
+	if cfg.proto != "http" && cfg.proto != "https" {
 		log.Errorf("proto setting from settings section of %s must be either http or https, but we got %s", configINIPath, cfg.proto)
 		os.Exit(1)
 	}
@@ -176,7 +174,7 @@ func joyproxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Forge request as it comes from browser... kinda
+	// Forge request as it comes from browser… kinda
 	if dlReq.Header.Get("Referer") != "" {
 		dlReq.Header.Del("Referer")
 	}
@@ -233,11 +231,15 @@ func joyproxyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func joyurlHandler(w http.ResponseWriter, r *http.Request) {
-	param := r.URL.Query()
+	var (
+		param          = r.URL.Query()
+		proxyURLString = " "
+	)
+
 	log.Debugln(spew.Sdump(param))
-	proxyUrlString := " "
 
 	re := regexp.MustCompile("^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$")
+
 	if len(param) > 0 && re.MatchString(param["joyurl"][0]) {
 		log.Debug("match with ^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$ pattern")
 		// https://img1.reactor.cc/pics/post/webm/видосик.webm
@@ -247,9 +249,20 @@ func joyurlHandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(p) > 6 && p[5] == "webm" {
 			log.Debug("webm url part detected, let's make joyproxy url")
+
 			file := p[6][:len(p[6])-5]
-			proxyUrlString = fmt.Sprintf("%s://%s/joyproxy/%s/%s/%s/mp4/%s.mp4", cfg.proto, r.Host, p[2], p[3], p[4], file)
-			proxyUrlString = html.EscapeString(proxyUrlString)
+
+			proxyURLString = fmt.Sprintf(
+				"%s://%s/joyproxy/%s/%s/%s/mp4/%s.mp4",
+				cfg.proto,
+				r.Host,
+				p[2],
+				p[3],
+				p[4],
+				file,
+			)
+
+			proxyURLString = html.EscapeString(proxyURLString)
 		} else {
 			log.Debug("webm url part not detected, skip making joyproxy url")
 		}
@@ -257,7 +270,7 @@ func joyurlHandler(w http.ResponseWriter, r *http.Request) {
 		log.Info("not match with ^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$ regex")
 	}
 
-	htmlText := fmt.Sprintf(postForm, proxyUrlString)
+	htmlText := fmt.Sprintf(postForm, proxyURLString)
 
 	if _, err := fmt.Fprintln(w, htmlText); err != nil {
 		log.Infof("Unable to write response to client: %s", err)
@@ -289,7 +302,15 @@ func main() {
 	http.HandleFunc("/joyurl", joyurlHandler)
 
 	log.Infof("Starting application on port %v\n", cfg.port)
-	log.Warn(http.ListenAndServe(cfg.port, nil))
+
+	// To prevent slow loris ddos, we have to define custom handler because builtin http.ListenAndServe() have no
+	// timeout and sits here forever.
+	server := &http.Server{
+		Addr:              cfg.port,
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+
+	log.Warn(server.ListenAndServe())
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */
