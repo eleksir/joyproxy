@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -227,6 +228,13 @@ func joyproxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	joyproxy := httputil.NewSingleHostReverseProxy(target)
+	joyproxy.Transport = &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   time.Duration(cfg.timeout) * time.Second,
+			KeepAlive: time.Duration(cfg.timeout) * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: time.Duration(cfg.timeout) * time.Second,
+	}
 	joyproxy.ServeHTTP(w, dlReq)
 }
 
@@ -307,7 +315,10 @@ func main() {
 	// timeout and sits here forever.
 	server := &http.Server{
 		Addr:              cfg.port,
-		ReadHeaderTimeout: 3 * time.Second,
+		ReadHeaderTimeout: time.Duration(cfg.timeout) * time.Second,
+		ReadTimeout:       time.Duration(cfg.timeout) * time.Second,
+		WriteTimeout:      time.Duration(cfg.timeout) * time.Second,
+		IdleTimeout:       time.Duration(cfg.timeout) * time.Second,
 	}
 
 	log.Warn(server.ListenAndServe())
