@@ -1,11 +1,13 @@
 module joyproxy
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/sirupsen/logrus v1.9.3
-	gopkg.in/ini.v1 v1.67.0
+	github.com/wlevene/ini v0.1.5
 )
 
-require golang.org/x/sys v0.22.0 // indirect
+require (
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+)

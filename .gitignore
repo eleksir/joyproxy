@@ -1,5 +1,3 @@
-.vscode/**
-.idea/**
-joyproxy.ini
-joyproxy
+/joyproxy.ini
+/joyproxy
 
