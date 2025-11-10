@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"os"
 	"time"
@@ -24,30 +25,39 @@ var (
 
 	// reader is required for Writer to work properly. It is connected via io.Pipe() to Writer.
 	reader io.Reader
+
+	// Logger *log.Logger thing required for compatibility with old-good log package.
+	Logger log.Logger
+
+	// LogFileHandler is currently opened log file descriptor. Stderr by default.
+	LogFileHandler = os.Stderr
+
+	// LogLevel current loglevel. Info by default.
+	LogLevel = slog.LevelInfo
 )
 
 // Init setup logger stuff.
 // level can be error, warn, info, debug if something other supplied info level selected.
 // fileDescriptor should be opened before supplying it to Init().
 func Init(level string, fileDescriptor *os.File) {
-	var loglevel slog.Level
+	LogFileHandler = fileDescriptor
 
 	// no panic, no trace.
 	switch level {
 	case "debug":
-		loglevel = slog.LevelDebug
+		LogLevel = slog.LevelDebug
 
 	case "info":
-		loglevel = slog.LevelInfo
+		LogLevel = slog.LevelInfo
 
 	case "warn":
-		loglevel = slog.LevelWarn
+		LogLevel = slog.LevelWarn
 
 	case "error":
-		loglevel = slog.LevelError
+		LogLevel = slog.LevelError
 
 	default:
-		loglevel = slog.LevelInfo
+		LogLevel = slog.LevelInfo
 	}
 
 	opts := &slog.HandlerOptions{ //nolint: exhaustruct
@@ -68,14 +78,21 @@ func Init(level string, fileDescriptor *os.File) {
 			return a
 		},
 
-		Level: loglevel,
+		Level: LogLevel,
 	}
 
-	Handler = slog.NewTextHandler(fileDescriptor, opts)
+	// Documentation says that we can use *os.File in place of io.Writer, but in this case it did not work.
+	// So we have to cast fileDescriptor to io.Writer.
+	w := io.Writer(fileDescriptor)
+
+	Handler = slog.NewTextHandler(w, opts)
 
 	slog.SetDefault(
 		slog.New(Handler),
 	)
+
+	// Catch log.Logger message at info loglevel of slog logging facility.
+	Logger = *slog.NewLogLogger(Handler, slog.LevelError)
 
 	reader, Writer = io.Pipe()
 
@@ -104,7 +121,7 @@ func readIoPipe() {
 	}
 }
 
-// GetLevel returns current loglevel.
+// GetLevel returns current loglevel as string.
 func GetLevel() string {
 	switch {
 	case Handler.Enabled(Ctx, slog.LevelDebug):
@@ -174,6 +191,42 @@ func Debug(message string) {
 // Debugf logs message on debug log level and allows to supply arguments in printf() style.
 func Debugf(format string, a ...any) {
 	slog.Debug(fmt.Sprintf(format, a...))
+}
+
+// Close closes opened log file descriptors.
+func Close() {
+	LogFileHandler.Close()
+}
+
+// ReOpenLog closes and opens log file again.
+func ReOpenLog() {
+	filename := LogFileHandler.Name()
+
+	// If we writing to stderr, we should not re-open it.
+	if filename == os.Stderr.Name() {
+		return
+	}
+
+	loglevel := GetLevel()
+
+	LogFileHandler.Close()
+
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+
+	if err != nil {
+		// Try to emulate our own log message format.
+		fmt.Fprintf(
+			os.Stderr,
+			"time=\"%s\" level=ERROR msg=\"Unable to open logfile %s: %s\"",
+			time.Now().Format(time.DateTime),
+			filename,
+			err,
+		)
+
+		return
+	}
+
+	Init(loglevel, file)
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

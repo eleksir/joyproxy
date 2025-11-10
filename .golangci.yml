@@ -1,6 +1,6 @@
 version: "2"
 run:
-  go: "1.25"
+  go: "1.24"
   modules-download-mode: readonly
   tests: false
   allow-parallel-runners: true
@@ -81,7 +81,7 @@ linters:
       ignore-exported: false
       include-unexported: true
       disable:
-         - max-len
+        - max-len
     godot:
       scope: all
       exclude:
@@ -196,7 +196,51 @@ linters:
         - fmt
       # https://staticcheck.dev/docs/configuration/options/#initialisms
       # Default: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SIP", "RTP", "AMQP", "DB", "TS"]
-      initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SIP", "RTP", "AMQP", "DB", "TS"]
+      initialisms:
+        [
+          "ACL",
+          "API",
+          "ASCII",
+          "CPU",
+          "CSS",
+          "DNS",
+          "EOF",
+          "GUID",
+          "HTML",
+          "HTTP",
+          "HTTPS",
+          "ID",
+          "IP",
+          "JSON",
+          "QPS",
+          "RAM",
+          "RPC",
+          "SLA",
+          "SMTP",
+          "SQL",
+          "SSH",
+          "TCP",
+          "TLS",
+          "TTL",
+          "UDP",
+          "UI",
+          "GID",
+          "UID",
+          "UUID",
+          "URI",
+          "URL",
+          "UTF8",
+          "VM",
+          "XML",
+          "XMPP",
+          "XSRF",
+          "XSS",
+          "SIP",
+          "RTP",
+          "AMQP",
+          "DB",
+          "TS",
+        ]
       # https://staticcheck.dev/docs/configuration/options/#http_status_code_whitelist
       # Default: ["200", "400", "404", "500"]
       http-status-code-whitelist: ["200", "400", "404", "500"]

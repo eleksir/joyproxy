@@ -14,12 +14,13 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// JoyproxyHandler request handler for /joyproxy location.
+// JoyproxyHandler request handler for /joyproxy location. It reads data from reactor.cc and immediately streams it to
+// client.
 func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 	var err error
 
 	if r.Method != http.MethodGet {
-		log.Infof("request method is not GET, but %s", r.Method)
+		log.Infof("Request method is not GET, but %s, sending 404 to client", r.Method)
 		w.WriteHeader(http.StatusNotFound)
 
 		if _, err = w.Write([]byte("404 Not Found")); err != nil {
@@ -35,7 +36,7 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 	joyHost := joyPath[2]
 
 	if !regexp.MustCompile("^img[0-9]+[.]reactor[.]cc$").MatchString(joyHost) {
-		log.Infof("supplied proxy target host is not match with ^img[0-9]+[.]reactor[.]cc$ pattern: %s", joyHost)
+		log.Infof("Supplied proxy target host is not match with ^img[0-9]+[.]reactor[.]cc$ pattern: %s, sening 404 to client", joyHost)
 		w.WriteHeader(http.StatusNotFound)
 
 		if _, err = w.Write([]byte("404 Not Found")); err != nil {
@@ -49,7 +50,7 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 	dlReq.RequestURI = "/" + strings.Join(joyPath, "/")
 
 	if !regexp.MustCompile("^/pics/post/mp4/.+[.]mp4$").MatchString(dlReq.RequestURI) {
-		log.Infof("supplied uri is not match with /pics/post/mp4/.+[.]mp4$ pattern: %s", dlReq.RequestURI)
+		log.Infof("Supplied uri is not match with /pics/post/mp4/.+[.]mp4$ pattern: %s, sending 404 to client", dlReq.RequestURI)
 		w.WriteHeader(http.StatusNotFound)
 
 		if _, err = w.Write([]byte("404 Not Found")); err != nil {
@@ -63,7 +64,7 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 	dlReq.URL, err = url.Parse(dlReq.RequestURI)
 
 	if err != nil {
-		log.Infof("unable to parse %s via url.Parse(): %s", dlReq.RequestURI, err)
+		log.Infof("Unable to parse %s via url.Parse(): %s, sending 404 to client", dlReq.RequestURI, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		if _, err = w.Write([]byte("404 Not Found")); err != nil {
@@ -78,13 +79,16 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 		dlReq.Header.Del("Referer")
 	}
 
+	log.Debugf("Replacing/appending Referer header value with https://old.reactor.cc/all")
 	dlReq.Header.Add("Referer", "https://old.reactor.cc/all")
 
 	if dlReq.Header.Get("User-Agent") != "" {
 		dlReq.Header.Del("User-Agent")
 	}
 
-	dlReq.Header.Add("User-Agent", userAgentString[rand.Intn(len(userAgentString)-1)])
+	ua := userAgentString[rand.Intn(len(userAgentString)-1)]
+	log.Debugf("Replacing User-Agent header value with %s", ua)
+	dlReq.Header.Add("User-Agent", ua)
 
 	if dlReq.Header.Get("Accept") != "" {
 		dlReq.Header.Del("Accept")
@@ -108,6 +112,7 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 		dlReq.Header.Del("Range")
 	}
 
+	log.Debugf("Replacing/appending Range header value with bytes=0-")
 	dlReq.Header.Add("Range", "bytes=0-")
 	log.Debug(spew.Sdump(dlReq))
 
@@ -115,7 +120,7 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 	target, err := url.Parse(u)
 
 	if err != nil {
-		log.Infof("unable to parse %s via url.Parse(): %s", u, err)
+		log.Infof("Unable to parse %s via url.Parse(): %s, sending 404 to client", u, err)
 		w.WriteHeader(http.StatusNotFound)
 
 		if _, err = w.Write([]byte("404 Not Found")); err != nil {
@@ -133,7 +138,10 @@ func JoyproxyHandler(w http.ResponseWriter, r *http.Request) { //nolint: revive
 			KeepAlive: time.Duration(Cfg.Timeout) * time.Second,
 		}).Dial,
 		TLSHandshakeTimeout: time.Duration(Cfg.Timeout) * time.Second,
+		DisableKeepAlives:   true,
+		DisableCompression:  true,
 	}
+
 	joyproxy.ServeHTTP(w, dlReq)
 }
 

@@ -18,19 +18,19 @@ func JoyurlHandler(w http.ResponseWriter, r *http.Request) {
 		proxyURLString = " "
 	)
 
-	log.Debug(spew.Sdump(param))
+	log.Debugf("Parse url into chunks: %s", spew.Sdump(param))
 
 	re := regexp.MustCompile("^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$")
 
 	if len(param) > 0 && re.MatchString(param["joyurl"][0]) {
-		log.Debug("match with ^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$ pattern")
+		log.Debug("Url match with ^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$ pattern")
 		// https://img1.reactor.cc/pics/post/webm/видосик.webm
 
 		p := regexp.MustCompile("/").Split(param["joyurl"][0], -1)
-		log.Debug(spew.Sdump(p))
+		log.Debugf("Split url string by / delimiter: %s", spew.Sdump(p))
 
 		if len(p) > 6 && p[5] == "webm" {
-			log.Debug("webm url part detected, let's make joyproxy url")
+			log.Debug("Substring webm is detected in url, let's make joyproxy url")
 
 			file := p[6][:len(p[6])-5]
 
@@ -46,10 +46,10 @@ func JoyurlHandler(w http.ResponseWriter, r *http.Request) {
 
 			proxyURLString = html.EscapeString(proxyURLString)
 		} else {
-			log.Debug("webm url part not detected, skip making joyproxy url")
+			log.Debug("Substring webm not detected in url, skip making joyproxy url")
 		}
 	} else {
-		log.Info("not match with ^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$ regex")
+		log.Info("Url is not match with ^https?://img[0-9]+[.]reactor[.]cc/.+[.][Ww][Ee][Bb][Mm]$ regex, skipping")
 	}
 
 	htmlText := fmt.Sprintf(postForm, proxyURLString)

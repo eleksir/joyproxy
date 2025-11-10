@@ -1,6 +1,11 @@
 // Package joyproxy is main appliction lib.
 package joyproxy
 
+import (
+	"net/http"
+	"os"
+)
+
 var (
 	// Cfg represents struct with application config settings.
 	Cfg Config
@@ -42,6 +47,18 @@ var (
 	}
 
 	postForm = "<html>\n<body>\n<form method='get' action='joyurl'>\n<input type='text' name='joyurl' size=100 autofocus><br>\n<input type='submit' value='Post it!' style='font-size:115%%;'>\n<br>%s<br>\n</body>\n</html>\n"
+
+	// SigChan is channel for signal handler routine SigHandler().
+	SigChan = make(chan os.Signal, 1)
+
+	// Server represents http server object.
+	Server *http.Server
+
+	// Shutdown set to true if service is shutting down via SigHandler().
+	Shutdown bool
+
+	// QuitChan is locking mechanism to wait until shutdown procedure completes.
+	QuitChan = make(chan bool, 1)
 )
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

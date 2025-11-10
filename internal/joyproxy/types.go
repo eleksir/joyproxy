@@ -6,6 +6,7 @@ type (
 		Port     string
 		Proto    string
 		Loglevel string
+		Logfile  string
 		Timeout  int
 	}
 )

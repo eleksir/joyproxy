@@ -52,6 +52,12 @@ func LoadConf() {
 	if Cfg.Loglevel == "" {
 		log.Fatalf("unable to get loglevel setting from settings section of %s", configINIPath)
 	}
+
+	Cfg.Logfile = configFH.Section("settings").Get("logfile")
+
+	if Cfg.Logfile == "" {
+		log.Infof("Logfile parameter is not set in settings section of %s", configINIPath)
+	}
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */
